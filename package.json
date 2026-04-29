@@ -1,23 +1,50 @@
 {
-  "name": "nodejs-express-project-setup-with-typescript",
-  "version": "1.0.0",
-  "description": "",
-  "homepage": "https://github.com/The-BlackShadoww/nodejs-express-project-setup-with-typescript#readme",
-  "bugs": {
-    "url": "https://github.com/The-BlackShadoww/nodejs-express-project-setup-with-typescript/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/The-BlackShadoww/nodejs-express-project-setup-with-typescript.git"
-  },
-  "license": "ISC",
-  "author": "Ashikur Rahman",
-  "type": "commonjs",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "dependencies": {
-    "express": "^5.2.1"
-  }
+    "name": "nodejs-express-project-setup-with-typescript",
+    "version": "1.0.0",
+    "description": "",
+    "homepage": "https://github.com/The-BlackShadoww/nodejs-express-project-setup-with-typescript#readme",
+    "bugs": {
+        "url": "https://github.com/The-BlackShadoww/nodejs-express-project-setup-with-typescript/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/The-BlackShadoww/nodejs-express-project-setup-with-typescript.git"
+    },
+    "license": "ISC",
+    "author": "Ashikur Rahman",
+    "type": "module",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "ts:check": "tsc --noEmit",
+        "ts:build": "rimraf dist && tsc -p tsconfig.build.json",
+        "ts:dev": "nodemon --exec ts-node -r tsconfig-paths/register src/app.ts",
+        "lint:ts": "eslint src/types/**/*.ts",
+        "format:ts": "prettier --write src/types/**/*.ts",
+        "dev": "nodemon src/index.ts"
+    },
+    "dependencies": {
+        "bcrypt": "^6.0.0",
+        "cloudinary": "^2.10.0",
+        "cookie-parser": "^1.4.7",
+        "cors": "^2.8.6",
+        "dotenv": "^17.4.2",
+        "express": "^5.2.1",
+        "jsonwebtoken": "^9.0.3",
+        "mongoose": "^9.6.0",
+        "multer": "^2.1.1"
+    },
+    "devDependencies": {
+        "@types/bcrypt": "^6.0.0",
+        "@types/cookie-parser": "^1.4.10",
+        "@types/cors": "^2.8.19",
+        "@types/express": "^5.0.6",
+        "@types/jsonwebtoken": "^9.0.10",
+        "@types/multer": "^2.1.0",
+        "@types/node": "^25.6.0",
+        "rimraf": "^6.1.3",
+        "ts-node": "^10.9.2",
+        "tsconfig-paths": "^4.2.0",
+        "typescript": "^6.0.3"
+    }
 }

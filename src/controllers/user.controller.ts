@@ -1,12 +1,23 @@
-import { asyncHandler } from "../utils/asyncHandler.js";
-import { ApiError } from "../utils/apiError.js";
-import { User } from "../models/user.model.js";
-import { uploadToCloudinary } from "../utils/cloudinary.js";
-import { ApiResponse } from "../utils/apiResponse.js";
-import jwt from "jsonwebtoken";
+import { Request, Response } from "express";
+import { asyncHandler } from "../utils/asyncHandler";
+import { ApiError } from "../utils/apiError";
+import { User } from "../models/user.model";
+import { uploadToCloudinary } from "../utils/cloudinary";
+import { ApiResponse } from "../utils/apiResponse";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import mongoose from "mongoose";
+import { IUserDocument } from "../types/user.types";
 
-const generateAccessAndRefreshTokens = async (userId) => {
+/**
+ * Multer files shape when using upload.fields()
+ */
+interface MulterFiles {
+  [fieldname: string]: Express.Multer.File[];
+}
+
+const generateAccessAndRefreshTokens = async (
+  userId: mongoose.Types.ObjectId,
+): Promise<{ accessToken: string; refreshToken: string }> => {
   // find user
   // generate access and refresh tokens
   // update refresh token
@@ -14,7 +25,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
   // return access and refresh tokens
 
   try {
-    const user = await User.findById(userId);
+    const user = (await User.findById(userId)) as IUserDocument;
     const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
 
@@ -32,7 +43,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
   }
 };
 
-const registerUser = asyncHandler(async (req, res) => {
+const registerUser = asyncHandler(async (req: Request, res: Response) => {
   //! logics to register user
   // get data from req.body / frontend
   // validation (check if not empty)
@@ -67,16 +78,17 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   //todo Check for images, check for avatar
-  const avatarLocalPath = req.files?.avatar[0]?.path;
+  const files = req.files as MulterFiles | undefined;
+  const avatarLocalPath = files?.avatar?.[0]?.path;
   // const coverImageLocalPath = req.files?.coverImage[0]?.path;
 
-  let coverImageLocalPath;
+  let coverImageLocalPath: string | undefined;
   if (
-    req.files &&
-    Array.isArray(req.files.coverImage) &&
-    req.files.coverImage.length > 0
+    files &&
+    Array.isArray(files.coverImage) &&
+    files.coverImage.length > 0
   ) {
-    coverImageLocalPath = req.files?.coverImage[0]?.path;
+    coverImageLocalPath = files.coverImage[0]?.path;
   }
 
   if (!avatarLocalPath) {
@@ -117,7 +129,7 @@ const registerUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, createdUser, "User registered successfully"));
 });
 
-const loginUser = asyncHandler(async (req, res) => {
+const loginUser = asyncHandler(async (req: Request, res: Response) => {
   //! logics to login user
   // get data from req.body / frontend
   // validation (check if not empty)
@@ -146,7 +158,7 @@ const loginUser = asyncHandler(async (req, res) => {
   //todo check if the password is matched and check for password
   //? this user is the one who is trying to login and you have taken it's
   //?  instance from the database here it is the user not the User.
-  const isPasswordValid = await user.isPasswordCorrect(password);
+  const isPasswordValid = await (user as IUserDocument).isPasswordCorrect(password);
 
   if (!isPasswordValid) {
     throw new ApiError(401, "Password is incorrect");
@@ -154,7 +166,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
   //todo create access and refresh token
   const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
-    user._id,
+    user._id as mongoose.Types.ObjectId,
   );
 
   //todo send cookies and response
@@ -183,10 +195,10 @@ const loginUser = asyncHandler(async (req, res) => {
     );
 });
 
-const logoutUser = asyncHandler(async (req, res) => {
+const logoutUser = asyncHandler(async (req: Request, res: Response) => {
   // verifyJWT middleware will verify the user exists or not in our database and will add user to req.user
   await User.findByIdAndUpdate(
-    req.user._id,
+    req.user!._id,
     {
       // $set: { refreshToken: undefined },
       $unset: {
@@ -210,7 +222,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "User logged Out"));
 });
 
-const refreshAccessToken = asyncHandler(async (req, res) => {
+const refreshAccessToken = asyncHandler(async (req: Request, res: Response) => {
   const incomingRefreshToken =
     req.cookies.refreshToken || req.body.refreshToken;
 
@@ -222,7 +234,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     const decodedToken = jwt.verify(
       incomingRefreshToken,
       process.env.REFRESH_TOKEN_SECRET,
-    );
+    ) as JwtPayload;
 
     const user = await User.findById(decodedToken?._id);
     if (!user) {
@@ -239,7 +251,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     };
 
     const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
-      user._id,
+      user._id as mongoose.Types.ObjectId,
     );
 
     return res
@@ -253,19 +265,19 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
           "Access token refreshed",
         ),
       );
-  } catch (error) {
+  } catch (error: any) {
     throw new ApiError(401, error?.message || "Invalid refresh token");
   }
 });
 
-const changeCurrentPassword = asyncHandler(async (req, res) => {
+const changeCurrentPassword = asyncHandler(async (req: Request, res: Response) => {
   const { oldPassword, newPassword } = req.body;
 
   // we can get user in req.user because when the a user is trying to change password that means
   // he is logged in and the verifyJWT middleware will add the user to req.user while logging.
   // const user = req.user?.id;
 
-  const user = await User.findById(req.user?._id);
+  const user = (await User.findById(req.user?._id)) as IUserDocument;
   const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
 
   if (!isPasswordCorrect) throw new ApiError(401, "Password is incorrect");
@@ -278,17 +290,17 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Password changed successfully"));
 });
 
-const getCurrentUser = asyncHandler(async (req, res) => {
+const getCurrentUser = asyncHandler(async (req: Request, res: Response) => {
   return res.status(200).json(new ApiResponse(200, req.user, "User found"));
 });
 
-const updateAccountDetails = asyncHandler(async (req, res) => {
+const updateAccountDetails = asyncHandler(async (req: Request, res: Response) => {
   const { fullName, email } = req.body;
 
   if (!(fullName || email)) throw new ApiError(400, "All fields are required");
 
   const user = await User.findByIdAndUpdate(
-    req.user._id,
+    req.user!._id,
     {
       $set: {
         fullName: fullName,
@@ -303,7 +315,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "Account details updated successfully"));
 });
 
-const updateUserAvatar = asyncHandler(async (req, res) => {
+const updateUserAvatar = asyncHandler(async (req: Request, res: Response) => {
   const avatarLocalPath = req.file?.path;
 
   if (!avatarLocalPath) throw new ApiError(400, "Avatar file is missing");
@@ -311,11 +323,11 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   //TODO: delete old image - assignment
   const avatar = await uploadToCloudinary(avatarLocalPath);
 
-  if (!avatar.url)
+  if (!avatar?.url)
     throw new ApiError(500, "Error while uploading avatar on cloudinary");
 
   const user = await User.findByIdAndUpdate(
-    req.user._id,
+    req.user!._id,
     {
       $set: {
         avatar: avatar.url,
@@ -329,7 +341,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "Avatar updated successfully"));
 });
 
-const updateUserCoverImage = asyncHandler(async (req, res) => {
+const updateUserCoverImage = asyncHandler(async (req: Request, res: Response) => {
   const CoverImageLocalPath = req.file?.path;
 
   if (!CoverImageLocalPath)
@@ -337,11 +349,11 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 
   const coverImage = await uploadToCloudinary(CoverImageLocalPath);
 
-  if (!coverImage.url)
+  if (!coverImage?.url)
     throw new ApiError(500, "Error while uploading cover image on cloudinary");
 
   const user = await User.findByIdAndUpdate(
-    req.user._id,
+    req.user!._id,
     {
       $set: {
         coverImage: coverImage.url,
@@ -355,15 +367,15 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "Cover image updated successfully"));
 });
 
-const getUserChannelProfile = asyncHandler(async (req, res) => {
+const getUserChannelProfile = asyncHandler(async (req: Request, res: Response) => {
   const { username } = req.params;
-  if (!username?.trim()) throw new ApiError(400, "Username is required");
+  if (typeof username !== "string" || !username.trim()) throw new ApiError(400, "Username is required");
 
   const channel = await User.aggregate([
     // Fist stage
     {
       $match: {
-        username: username?.toLowerCase(),
+        username: username.toLowerCase(),
       },
     },
     // Second stage
@@ -430,60 +442,6 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     );
 });
 
-const getWatchHistory = asyncHandler(async (req, res) => {
-  const user = await User.aggregate([
-    {
-      $match: {
-        _id: new mongoose.Types.ObjectId(req.user._id),
-      },
-    },
-    {
-      $lookup: {
-        from: "videos",
-        localField: "watchHistory",
-        foreignField: "_id",
-        as: "watchHistory",
-        pipeline: [
-          {
-            $lookup: {
-              from: "users",
-              localField: "owner",
-              foreignField: "_id",
-              as: "owner",
-              pipeline: [
-                {
-                  $project: {
-                    fullName: 1,
-                    username: 1,
-                    avatar: 1,
-                  },
-                },
-              ],
-            },
-          },
-          {
-            $addFields: {
-              owner: {
-                $first: "$owner",
-              },
-            },
-          },
-        ],
-      },
-    },
-  ]);
-
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        user[0].watchHistory,
-        "Watch history fetched successfully",
-      ),
-    );
-});
-
 export {
   registerUser,
   loginUser,
@@ -495,5 +453,4 @@ export {
   updateUserAvatar,
   updateUserCoverImage,
   getUserChannelProfile,
-  getWatchHistory,
 };

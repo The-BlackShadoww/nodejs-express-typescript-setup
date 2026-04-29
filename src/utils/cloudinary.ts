@@ -1,5 +1,6 @@
 import fs from "fs";
-import { v2 as cloudinary } from "cloudinary";
+import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
+import { ApiError } from "./apiError";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -8,7 +9,9 @@ cloudinary.config({
   secure: true,
 });
 
-const uploadToCloudinary = async (localFilePath) => {
+const uploadToCloudinary = async (
+  localFilePath: string | undefined,
+): Promise<UploadApiResponse | null> => {
   try {
     if (!localFilePath) return null;
     // upload to cloudinary
@@ -23,20 +26,23 @@ const uploadToCloudinary = async (localFilePath) => {
     return response;
   } catch (err) {
     console.log(err);
-    fs.unlinkSync(localFilePath); //! remove the locally saved temporary file as the  upload operation got failed
+    fs.unlinkSync(localFilePath!); //! remove the locally saved temporary file as the upload operation got failed
     return null;
   }
 };
 
-const deleteFromCloudinary = async (oldUrl, publicId) => {
+const deleteFromCloudinary = async (
+  oldUrl: string,
+  publicId: string,
+): Promise<void> => {
   try {
     if (!(oldUrl || publicId))
       throw new ApiError(404, "oldUrl or publicId required");
 
-    const response = await cloudinary.uploader.destroy(publicId, {
+    await cloudinary.uploader.destroy(publicId, {
       resource_type: `${oldUrl.includes("image") ? "image" : "video"}`,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error while deleting asset from Cloudinary:", error);
     throw new ApiError(500, error?.message || "Server error");
   }

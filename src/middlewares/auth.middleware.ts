@@ -1,11 +1,12 @@
-import { asyncHandler } from "../utils/asyncHandler.js";
-import { ApiError } from "../utils/apiError.js";
-import jwt from "jsonwebtoken";
-import { User } from "../models/user.model.js";
+import { Request, Response, NextFunction } from "express";
+import { asyncHandler } from "../utils/asyncHandler";
+import { ApiError } from "../utils/apiError";
+import jwt, { JwtPayload } from "jsonwebtoken";
+import { User } from "../models/user.model";
 
 //! The verifyJWT middleware verifies the user's JWT, checks if the user exists in the database,
 //! and attaches the user to the request object.
-export const verifyJWT = asyncHandler(async (req, _, next) => {
+export const verifyJWT = asyncHandler(async (req: Request, _: Response, next: NextFunction) => {
   try {
     //todo get token
     // Extract token from cookies or Authorization header
@@ -21,7 +22,7 @@ export const verifyJWT = asyncHandler(async (req, _, next) => {
 
     //todo ask jwt to verify token
     // Verify the token using jwt and secret key
-    const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET) as JwtPayload;
 
     // Find the user in the database using the decoded token's user ID
     const user = await User.findById(decodedToken?._id).select(
@@ -38,7 +39,7 @@ export const verifyJWT = asyncHandler(async (req, _, next) => {
     req.user = user;
     // Call next middleware
     next();
-  } catch (error) {
+  } catch (error: any) {
     // Handle any errors and throw an ApiError
     throw new ApiError(401, error?.message || "Invalid access token");
   }

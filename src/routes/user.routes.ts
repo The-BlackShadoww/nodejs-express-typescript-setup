@@ -10,10 +10,9 @@ import {
   updateUserAvatar,
   updateUserCoverImage,
   getUserChannelProfile,
-  getWatchHistory,
-} from "../controllers/user.controller.js";
-import { verifyJWT } from "../middlewares/auth.middleware.js";
-import { upload } from "../middlewares/multer.middleware.js";
+} from "../controllers/user.controller";
+import { verifyJWT } from "../middlewares/auth.middleware";
+import { upload } from "../middlewares/multer.middleware";
 
 const router = Router();
 
@@ -35,7 +34,6 @@ router.route("/change-password").post(verifyJWT, changeCurrentPassword);
 router.route("/current-user").get(verifyJWT, getCurrentUser);
 router.route("/update-account").patch(verifyJWT, updateAccountDetails);
 router.route("/c/:username").get(verifyJWT, getUserChannelProfile);
-router.route("/history").get(verifyJWT, getWatchHistory);
 router
   .route("/avatar")
   .patch(verifyJWT, upload.single("avatar"), updateUserAvatar);
