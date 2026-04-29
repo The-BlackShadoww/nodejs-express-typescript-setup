@@ -1,29 +1,23 @@
 {
-  "name": "express-ts-example",
+  "name": "nodejs-express-project-setup-with-typescript",
   "version": "1.0.0",
   "description": "",
+  "homepage": "https://github.com/The-BlackShadoww/nodejs-express-project-setup-with-typescript#readme",
+  "bugs": {
+    "url": "https://github.com/The-BlackShadoww/nodejs-express-project-setup-with-typescript/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/The-BlackShadoww/nodejs-express-project-setup-with-typescript.git"
+  },
+  "license": "ISC",
+  "author": "Ashikur Rahman",
+  "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
-    "build": "tsc --build",
-    "start": "node ./dist/index.js",
-    "dev": "nodemon ./src/index.ts"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "express": "^5.1.0",
-    "express-session": "^1.18.2",
-    "prettier": "^3.6.2"
-  },
-  "devDependencies": {
-    "@types/express": "^5.0.3",
-    "@types/jest": "^30.0.0",
-    "jest": "^30.2.0",
-    "nodemon": "^3.1.10",
-    "ts-jest": "^29.4.4",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "express": "^5.2.1"
   }
 }
