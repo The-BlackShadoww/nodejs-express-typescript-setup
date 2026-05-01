@@ -47,10 +47,9 @@ const userSchema = new Schema<IUserDocument>(
 );
 
 //todo hash password
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
   this.password = await bcrypt.hash(this.password, 10);
-  next();
 });
 
 //todo compare password
@@ -68,8 +67,8 @@ userSchema.methods.generateAccessToken = function (): string {
       username: this.username,
       fullName: this.fullName,
     },
-    process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: process.env.ACCESS_TOKEN_EXPIRY },
+    process.env.ACCESS_TOKEN_SECRET as string,
+    { expiresIn: process.env.ACCESS_TOKEN_EXPIRY as any }
   );
 };
 
@@ -78,8 +77,8 @@ userSchema.methods.generateRefreshToken = function (): string {
     {
       _id: this._id,
     },
-    process.env.REFRESH_TOKEN_SECRET,
-    { expiresIn: process.env.REFRESH_TOKEN_EXPIRY },
+    process.env.REFRESH_TOKEN_SECRET as string,
+    { expiresIn: process.env.REFRESH_TOKEN_EXPIRY as any }
   );
 };
 
